@@ -38,10 +38,10 @@ jobs:
           SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools/bin/sdkmanager"
           test -x "$SDKMANAGER"
           yes | "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" --licenses >/dev/null || true
-          "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
           test -x "$ANDROID_SDK_ROOT/platform-tools/adb"
-          test -d "$ANDROID_SDK_ROOT/platforms/android-33"
-          test -x "$ANDROID_SDK_ROOT/build-tools/33.0.2/aapt"
+          test -d "$ANDROID_SDK_ROOT/platforms/android-35"
+          test -x "$ANDROID_SDK_ROOT/build-tools/35.0.0/aapt"
           if [ ! -f "$HOME/.android/debug.keystore" ]; then
             keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
