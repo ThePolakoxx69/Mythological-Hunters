@@ -27,6 +27,7 @@ jobs:
           GODOT_VERSION="4.4.1"
           TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
           JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+          ANDROID_SDK_ROOT="/usr/lib/android-sdk"
           mkdir -p "$TEMPLATE_DIR" "$HOME/.android" "$HOME/.config/godot"
           if [ ! -f "$TEMPLATE_DIR/android_debug.apk" ] || [ ! -f "$TEMPLATE_DIR/android_release.apk" ]; then
             curl -fL "https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz" -o /tmp/godot-templates.tpz
@@ -34,11 +35,13 @@ jobs:
             unzip -q /tmp/godot-templates.tpz -d /tmp/godot-templates
             cp -a /tmp/godot-templates/templates/. "$TEMPLATE_DIR/"
           fi
-          SDKMANAGER="$(find /usr/lib/android-sdk -type f -name sdkmanager -executable 2>/dev/null | head -n 1 || true)"
-          if [ -n "$SDKMANAGER" ]; then
-            yes | "$SDKMANAGER" --licenses >/dev/null || true
-            "$SDKMANAGER" "platform-tools" "platforms;android-33" "build-tools;33.0.2"
-          fi
+          SDKMANAGER="$ANDROID_SDK_ROOT/cmdline-tools/cmdline-tools/bin/sdkmanager"
+          test -x "$SDKMANAGER"
+          yes | "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" --licenses >/dev/null || true
+          "$SDKMANAGER" --sdk_root="$ANDROID_SDK_ROOT" "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          test -x "$ANDROID_SDK_ROOT/platform-tools/adb"
+          test -d "$ANDROID_SDK_ROOT/platforms/android-33"
+          test -x "$ANDROID_SDK_ROOT/build-tools/33.0.2/aapt"
           if [ ! -f "$HOME/.android/debug.keystore" ]; then
             keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
           fi
@@ -46,11 +49,11 @@ jobs:
           [gd_resource type="EditorSettings" format=3]
           [resource]
           export/android/java_sdk_path = "$JAVA_HOME"
-          export/android/android_sdk_path = "/usr/lib/android-sdk"
+          export/android/android_sdk_path = "$ANDROID_SDK_ROOT"
           EOF
           echo "JAVA_HOME=$JAVA_HOME" >> "$GITHUB_ENV"
-          echo "ANDROID_HOME=/usr/lib/android-sdk" >> "$GITHUB_ENV"
-          echo "ANDROID_SDK_ROOT=/usr/lib/android-sdk" >> "$GITHUB_ENV"
+          echo "ANDROID_HOME=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> "$GITHUB_ENV"
 
       - name: Check project files
         run: |
