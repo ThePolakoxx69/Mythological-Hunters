@@ -18,6 +18,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Prepare Android export tools
+        shell: bash
+        run: |
+          set -euxo pipefail
+          GODOT_VERSION="4.4.1"
+          TEMPLATE_DIR="$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          mkdir -p "$TEMPLATE_DIR" "$HOME/.android"
+          if [ ! -f "$TEMPLATE_DIR/android_debug.apk" ] || [ ! -f "$TEMPLATE_DIR/android_release.apk" ]; then
+            curl -fL "https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_export_templates.tpz" -o /tmp/godot-templates.tpz
+            mkdir -p /tmp/godot-templates
+            unzip -q /tmp/godot-templates.tpz -d /tmp/godot-templates
+            cp -a /tmp/godot-templates/templates/. "$TEMPLATE_DIR/"
+          fi
+          SDKMANAGER="$(find /usr/lib/android-sdk -type f -name sdkmanager -executable 2>/dev/null | head -n 1 || true)"
+          if [ -n "$SDKMANAGER" ]; then
+            yes | "$SDKMANAGER" --licenses >/dev/null || true
+            "$SDKMANAGER" "platform-tools" "platforms;android-33" "build-tools;33.0.2"
+          fi
+          if [ ! -f "$HOME/.android/debug.keystore" ]; then
+            keytool -genkeypair -v -keystore "$HOME/.android/debug.keystore" -storepass android -alias androiddebugkey -keypass android -keyalg RSA -keysize 2048 -validity 10000 -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          echo "ANDROID_HOME=/usr/lib/android-sdk" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=/usr/lib/android-sdk" >> "$GITHUB_ENV"
+
       - name: Check project files
         run: |
           test -f project.godot
